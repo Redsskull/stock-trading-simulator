@@ -1,0 +1,61 @@
+{% extends "layout.html" %} {% block title %}Buy{% endblock %} {% block main %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div id="buyForm" class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-line"></i>
+                    Buy Stock
+                </h4>
+            </div>
+            <div class="card-body">
+                <form id="buyStockForm" action="/buy" method="post">
+                    <div class="mb-3">
+                        <label for="stock" class="form-label"
+                            >Stock Symbol</label
+                        >
+                        <input
+                            type="text"
+                            class="form-control form-control-lg"
+                            id="stock"
+                            name="symbol"
+                            placeholder="e.g. AAPL, GOOGL, MSFT"
+                            required
+                            autocomplete="off"
+                        />
+                        <label for="stock" class="form-label"
+                            >Number of Shares
+                        </label>
+                        <input
+                            type="number"
+                            class="form-control form-control-sm w-25"
+                            id="shares"
+                            name="shares"
+                            placeholder="Shares number"
+                            required
+                            min="1"
+                            autocomplete="off"
+                        />
+                        <div class="form-text">Enter a valid stock symbol</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search"></i>
+                            Buy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div
+    id="buyResult"
+    class="row justify-content-center mt-4"
+    style="display: none"
+>
+    <!-- Results will be populated here -->
+</div>
+
+{% endblock %}

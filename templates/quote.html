@@ -1,0 +1,48 @@
+{% extends "layout.html" %} {% block title %}Quote{% endblock %} {% block main
+%}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div id="quoteForm" class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-line"></i>
+                    Get Stock Quote
+                </h4>
+            </div>
+            <div class="card-body">
+                <form action="/quote" id="quotePrice" method="POST">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label"
+                            >Stock Symbol</label
+                        >
+                        <input
+                            type="text"
+                            class="form-control form-control-lg"
+                            id="symbol"
+                            name="symbol"
+                            placeholder="e.g. AAPL, GOOGL, MSFT"
+                            required
+                            autocomplete="off"
+                        />
+                        <div class="form-text">Enter a valid stock symbol</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search"></i>
+                            Get Quote
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div
+    id="quoteResult"
+    class="row justify-content-center mt-4"
+    style="display: none"
+>
+    <!-- Results will be populated here -->
+</div>
+{% endblock %}

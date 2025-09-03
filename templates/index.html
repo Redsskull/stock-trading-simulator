@@ -1,0 +1,169 @@
+{% extends "layout.html" %} {% block title %}Portfolio{% endblock %} {% block
+main %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="bg-success text-white p-4 rounded mb-4 text-center">
+            {% if current_time < 12 %}
+            <h2 class="mb-1 fw-bold">Good morning, {{ user.username }}!</h2>
+            {% elif current_time < 17 %}
+            <h2 class="mb-1 fw-bold">Good afternoon, {{ user.username }}!</h2>
+            {% else %}
+            <h2 class="mb-1 fw-bold">Good evening, {{ user.username }}!</h2>
+            {% endif %}
+            <p class="mb-0 opacity-75">Your Portfolio Overview</p>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="card-title text-primary">Add Cash</h6>
+                        <form action="/add_cash" method="post" class="d-inline">
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">$</span>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    name="amount"
+                                    placeholder="Amount"
+                                    step="0.01"
+                                    min="1"
+                                    max="10000"
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-sm"
+                            >
+                                <i class="fas fa-plus"></i> Add Cash
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="card-title text-info">Quick Actions</h6>
+                        <a href="/buy" class="btn btn-success btn-sm me-1">
+                            <i class="fas fa-shopping-cart"></i> Buy Stocks
+                        </a>
+                        <a href="/sell" class="btn btn-warning btn-sm">
+                            <i class="fas fa-hand-holding-usd"></i> Sell Stocks
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 text-muted">Current Holdings</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-success">
+                        <tr>
+                            <th scope="col">Stock Symbol</th>
+                            <th scope="col" class="text-center">Shares</th>
+                            <th scope="col" class="text-end">Price</th>
+                            <th scope="col" class="text-end">Total</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in stocks %}
+                        <tr>
+                            <td class="fw-bold text-primary">
+                                {{ stock.symbol }}
+                            </td>
+                            <td class="text-center">{{ stock.shares }}</td>
+                            <td class="text-end">{{ stock.price | usd }}</td>
+                            <td class="text-end fw-semibold text-success">
+                                {{ (stock.shares * stock.price) | usd }}
+                            </td>
+                            <td class="text-center">
+                                <!-- Quick Buy Form -->
+                                <form
+                                    action="/buy"
+                                    method="post"
+                                    class="d-inline me-1"
+                                >
+                                    <input
+                                        type="hidden"
+                                        name="symbol"
+                                        value="{{ stock.symbol }}"
+                                    />
+                                    <input
+                                        type="number"
+                                        name="shares"
+                                        class="form-control form-control-sm d-inline"
+                                        style="width: 60px"
+                                        placeholder="1"
+                                        min="1"
+                                        max="100"
+                                        value="1"
+                                    />
+                                    <button
+                                        type="submit"
+                                        class="btn btn-success btn-sm"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Quick Sell Form -->
+                                <form
+                                    action="/sell"
+                                    method="post"
+                                    class="d-inline"
+                                >
+                                    <input
+                                        type="hidden"
+                                        name="symbol"
+                                        value="{{ stock.symbol }}"
+                                    />
+                                    <input
+                                        type="number"
+                                        name="shares"
+                                        class="form-control form-control-sm d-inline"
+                                        style="width: 60px"
+                                        placeholder="1"
+                                        min="1"
+                                        max="{{ stock.shares }}"
+                                        value="1"
+                                    />
+                                    <button
+                                        type="submit"
+                                        class="btn btn-warning btn-sm"
+                                    >
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <!--I steal the idea from CS50! -->
+                    <tfoot class="table-light border-top">
+                        <tr>
+                            <td class="fw-bold text-end" colspan="4">Cash</td>
+                            <td class="text-end fw-semibold">
+                                {{ cash | usd }}
+                            </td>
+                        </tr>
+                        <tr class="table-success">
+                            <td class="fw-bold text-end" colspan="4">TOTAL</td>
+                            <td class="text-end fw-bold fs-5">
+                                {{ total_value | usd }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
