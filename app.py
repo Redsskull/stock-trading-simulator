@@ -1,6 +1,6 @@
 from functools import total_ordering
 import os
-
+from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
@@ -9,12 +9,18 @@ from datetime import datetime
 from requests.exceptions import RequestsDependencyWarning
 from werkzeug.security import check_password_hash, generate_password_hash
 
+# Load environment variables from .env file
+load_dotenv()
+print(f"Working from: {os.getcwd()}")
+
 from database import db
 from helpers import apology, login_required, lookup, usd
 from models import User, Buy
 
 # Configure application
 app = Flask(__name__)
+
+
 
 # Custom filter
 app.jinja_env.filters["usd"] = usd
@@ -207,15 +213,17 @@ def logout():
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
 def quote():
-    """Get stock quote."""
     if request.method == "GET":
         return render_template("quote.html")
 
     symbol = request.form.get("symbol")
     if not symbol:
         return apology("missing symbol", 400)
+
     quote_data = lookup(symbol)
-    if not quote_data:
+
+    # Check if lookup returned an error
+    if not quote_data or "error" in quote_data:
         return apology("invalid symbol or quote not found", 400)
 
     return render_template("quoted.html", quote=quote_data)
@@ -389,8 +397,8 @@ def add_cash():
         if amount <= 0:
             flash("Amount must be positive", "error")
             return redirect("/")
-        if amount > 10000:  # Set a reasonable limit
-            flash("Maximum deposit is $10,000", "error")
+        if amount > 15000:
+            flash("Maximum deposit is $15,000", "error")
             return redirect("/")
     except ValueError:
         flash("Invalid amount", "error")

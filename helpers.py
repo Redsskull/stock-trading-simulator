@@ -1,9 +1,11 @@
 import requests
+import os
 
 from flask import redirect, render_template, session
 from functools import wraps
 
 
+#This function is credited to my teacher.
 def apology(message, code=400):
     """Render message as an apology to user."""
 
@@ -28,7 +30,7 @@ def apology(message, code=400):
 
     return render_template("apology.html", top=code, bottom=escape(message)), code
 
-
+#This function is credited to my teacher.
 def login_required(f):
     """
     Decorate routes to require login.
@@ -46,24 +48,43 @@ def login_required(f):
 
 
 def lookup(symbol):
-    """Look up quote for symbol."""
-    url = f"https://finance.cs50.io/quote?symbol={symbol.upper()}"
+    """Look up quote for symbol using Alpha Vantage API."""
+
+    api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
+    if not api_key:
+
+        return {"error": "API key not configured"}
+
+    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol.upper()}&apikey={api_key}"
+
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an error for HTTP error responses
-        quote_data = response.json()
-        return {
-            "name": quote_data["companyName"],
-            "price": quote_data["latestPrice"],
-            "symbol": symbol.upper()
-        }
+        response.raise_for_status()
+        data = response.json()
+
+
+
+
+        if "Global Quote" in data:
+            quote = data["Global Quote"]
+
+            return {
+                "name": quote.get("01. symbol", symbol.upper()),
+                "price": float(quote.get("05. price", 0)),
+                "symbol": symbol.upper()
+            }
+        else:
+
+            return {"error": "Symbol not found"}
+
     except requests.RequestException as e:
         print(f"Request error: {e}")
+        return {"error": "Network error"}
     except (KeyError, ValueError) as e:
         print(f"Data parsing error: {e}")
-    return None
+        return {"error": "Data parsing error"}
 
-
+#This function is credited to my teacher.
 def usd(value):
     """Format value as USD."""
     return f"${value:,.2f}"

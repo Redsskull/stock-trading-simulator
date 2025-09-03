@@ -35,6 +35,7 @@ pycodestyle==2.12.0
 pycparser==2.22
 pyfiglet==1.0.3
 python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
 python-magic==0.4.27
 pytz==2025.2
 PyYAML==6.0.2

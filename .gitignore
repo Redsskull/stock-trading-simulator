@@ -1,0 +1,19 @@
+# Environment variables
+.env
+*.env
+
+# Database
+finance.db
+instance/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+
+# Flask
+.flaskenv
