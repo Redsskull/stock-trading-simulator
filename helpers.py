@@ -5,7 +5,7 @@ from flask import redirect, render_template, session
 from functools import wraps
 
 
-#This function is credited to my teacher.
+#This function is credited to my teacher. who themselves used this code found here - https://github.com/jacebrowning/memegen
 def apology(message, code=400):
     """Render message as an apology to user."""
 
@@ -48,41 +48,32 @@ def login_required(f):
 
 
 def lookup(symbol):
-    """Look up quote for symbol using Alpha Vantage API."""
-
-    api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
+    """Look up quote for symbol using Finnhub API."""
+    api_key = os.environ.get("FINNHUB_API_KEY")
     if not api_key:
-
         return {"error": "API key not configured"}
 
-    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol.upper()}&apikey={api_key}"
-
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+        # Get stock price
+        quote_url = f"https://finnhub.io/api/v1/quote?symbol={symbol.upper()}&token={api_key}"
+        quote_response = requests.get(quote_url)
+        quote_response.raise_for_status()
+        quote_data = quote_response.json()
 
+        # Get company name
+        profile_url = f"https://finnhub.io/api/v1/stock/profile2?symbol={symbol.upper()}&token={api_key}"
+        profile_response = requests.get(profile_url)
+        profile_response.raise_for_status()
+        profile_data = profile_response.json()
 
+        return {
+            "name": profile_data.get("name", symbol.upper()),
+            "price": float(quote_data.get("c", 0)),  # 'c' is current price
+            "symbol": symbol.upper()
+        }
 
-
-        if "Global Quote" in data:
-            quote = data["Global Quote"]
-
-            return {
-                "name": quote.get("01. symbol", symbol.upper()),
-                "price": float(quote.get("05. price", 0)),
-                "symbol": symbol.upper()
-            }
-        else:
-
-            return {"error": "Symbol not found"}
-
-    except requests.RequestException as e:
-        print(f"Request error: {e}")
-        return {"error": "Network error"}
-    except (KeyError, ValueError) as e:
-        print(f"Data parsing error: {e}")
-        return {"error": "Data parsing error"}
+    except Exception as e:
+        return {"error": str(e)}
 
 #This function is credited to my teacher.
 def usd(value):
