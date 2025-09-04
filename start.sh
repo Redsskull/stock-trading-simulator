@@ -1,5 +1,9 @@
 #!/bin/bash
-# Run database migrations (this happens at runtime when DATABASE_URL is available)
+# Source the virtual environment first
+source /opt/render/project/src/.venv/bin/activate
+
+# Run database migrations
+echo "Running database migrations..."
 python -c "from app import app; from flask_migrate import upgrade; with app.app_context(): upgrade()"
 echo "Database migrations completed successfully"
 
