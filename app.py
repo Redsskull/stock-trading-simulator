@@ -20,6 +20,29 @@ from models import User, Buy
 # Configure application
 app = Flask(__name__)
 
+# PRODUCTION-READY CONFIGURATION
+# Configure SECRET_KEY (essential for sessions and security)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
+
+if os.environ.get("DATABASE_URL"):
+    # Production: Render provides PostgreSQL database
+    database_url = os.environ.get("DATABASE_URL")
+    # Fix for SQLAlchemy 2.0 - Render uses postgres:// but SQLAlchemy needs postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    print("Using production PostgreSQL database")
+else:
+    # Local development with SQLite
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'finance.db')}"
+    print("Using local SQLite database")
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Initialize database and migrations
+db.init_app(app)
+migrate = Migrate(app, db)
+
 
 
 # Custom filter
@@ -30,12 +53,27 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure SQLAlchemy Library to use SQLite database
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'finance.db')}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)
-migrate = Migrate(app, db)
+# Function to create tables in production
+def create_tables():
+    """Create database tables if they don't exist"""
+    with app.app_context():
+        try:
+            db.create_all()
+            print("Database tables created successfully!")
+
+            # Optional: Create a default admin user for testing
+            # Uncomment if you want a test user in production
+            # if not User.query.filter_by(username="admin").first():
+            #     admin_user = User(
+            #         username="admin",
+            #         hash=generate_password_hash("password123")
+            #     )
+            #     db.session.add(admin_user)
+            #     db.session.commit()
+            #     print("Default admin user created!")
+
+        except Exception as e:
+            print(f"Error creating tables: {e}")
 
 
 
@@ -345,8 +383,8 @@ def sell():
 
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error during purchase: {e}")
-        return apology("An error occurred while processing your purchase. Please try again.")
+        app.logger.error(f"Error during sale: {e}")
+        return apology("An error occurred while processing your sale. Please try again.")
 
 
 @app.route("/password", methods=["GET", "POST"])
@@ -426,5 +464,11 @@ def add_cash():
 
 
 
+# PRODUCTION-READY STARTUP
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Create tables if they don't exist (important for first deployment)
+    create_tables()
+
+    # Production-ready server configuration
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
