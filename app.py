@@ -24,18 +24,19 @@ app = Flask(__name__)
 # Configure SECRET_KEY (essential for sessions and security)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 
-if os.environ.get("DATABASE_URL"):
-    # Production: Render provides PostgreSQL database
-    database_url = os.environ.get("DATABASE_URL")
-    # Fix for SQLAlchemy 2.0 - Render uses postgres:// but SQLAlchemy needs postgresql://
+# Configure database
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Render provides postgres:// but SQLAlchemy 2.0+ requires postgresql://
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print("Using production PostgreSQL database")
+    print("Using PostgreSQL (Render)")
 else:
-    # Local development with SQLite
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'finance.db')}"
-    print("Using local SQLite database")
+    # Local development fallback
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
+    print("Using SQLite (local development)")
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -55,11 +56,12 @@ Session(app)
 
 # Function to create tables in production
 def create_tables():
-    """Create database tables if they don't exist"""
+    """Create database tables using migrations"""
     with app.app_context():
         try:
-            db.create_all()
-            print("Database tables created successfully!")
+            from flask_migrate import upgrade
+            upgrade()  # This applies all pending migrations
+            print("Database upgraded successfully!")
 
             # Optional: Create a default admin user for testing
             # Uncomment if you want a test user in production
@@ -464,11 +466,10 @@ def add_cash():
 
 
 
-# PRODUCTION-READY STARTUP
 if __name__ == '__main__':
-    # Create tables if they don't exist (important for first deployment)
-    create_tables()
+    # Only run migrations in production
+    if os.environ.get("DATABASE_URL"):
+        create_tables()
 
-    # Production-ready server configuration
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
