@@ -1,5 +1,6 @@
 #!/bin/bash
-export PATH="/usr/bin:$PATH"
+# If virtualenv is used, activate it first (example path)
+source /path/to/venv/bin/activate
 
 # Exit on error
 set -e
