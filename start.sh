@@ -1,11 +1,11 @@
 #!/bin/bash
-# Source the virtual environment first
-source /opt/render/project/src/.venv/bin/activate
+# Exit on error
+set -e
 
 # Run database migrations
 echo "Running database migrations..."
-python -c "from app import app; from flask_migrate import upgrade; with app.app_context(): upgrade()"
+python -c "from app import app, db; from flask_migrate import upgrade; app.app_context().push(); upgrade()"
 echo "Database migrations completed successfully"
 
-# Start the application
-exec python -m gunicorn -b :$PORT app:app
+# Start the application with Gunicorn
+exec gunicorn --bind 0.0.0.0:${PORT:-10000} app:app

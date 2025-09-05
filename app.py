@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 from datetime import datetime
 from requests.exceptions import RequestsDependencyWarning
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -24,7 +24,7 @@ app = Flask(__name__)
 # Configure SECRET_KEY (essential for sessions and security)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 
-# Configure database
+# Configure database with better error handling
 database_url = os.environ.get("DATABASE_URL")
 
 if database_url:
@@ -32,19 +32,22 @@ if database_url:
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print("Using PostgreSQL (Render)")
+    print(f"Using PostgreSQL (Render)")
+    print(f"Database URL configured: {database_url[:20]}...")  # Print first 20 chars for debugging
 else:
     # Local development fallback
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
-    print("Using SQLite (local development)")
+    print("WARNING: DATABASE_URL not found. Using SQLite (local development)")
+
+    # If on Render but no DATABASE_URL, that's a problem
+    if os.environ.get("RENDER"):
+        print("ERROR: Running on Render but DATABASE_URL is not set!")
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize database and migrations
 db.init_app(app)
 migrate = Migrate(app, db)
-
-
 
 # Custom filter
 app.jinja_env.filters["usd"] = usd
@@ -59,25 +62,14 @@ def create_tables():
     """Create database tables using migrations"""
     with app.app_context():
         try:
-            from flask_migrate import upgrade
             upgrade()  # This applies all pending migrations
             print("Database upgraded successfully!")
 
-            # Optional: Create a default admin user for testing
-            # Uncomment if you want a test user in production
-            # if not User.query.filter_by(username="admin").first():
-            #     admin_user = User(
-            #         username="admin",
-            #         hash=generate_password_hash("password123")
-            #     )
-            #     db.session.add(admin_user)
-            #     db.session.commit()
-            #     print("Default admin user created!")
 
         except Exception as e:
             print(f"Error creating tables: {e}")
-
-
+            # Don't exit the app, let it try to run anyway
+            # Some migrations might fail but the app could still work
 
 @app.after_request
 def after_request(response):
@@ -86,7 +78,6 @@ def after_request(response):
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     return response
-
 
 @app.route("/")
 @login_required
@@ -116,8 +107,6 @@ def index():
                 'symbol': buy.symbol,
                 'shares': buy.shares,
                 'price': current_price
-
-
             }
 
     cash = user.cash
@@ -131,9 +120,7 @@ def index():
     # This is a little fun I added a greeting based on time a day
     current_time = datetime.now().hour
 
-
     return render_template("index.html", user=user, stocks=stocks_under_or_zero, cash = cash, total_value=total_value, current_time=current_time)
-
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -162,7 +149,6 @@ def buy():
             return apology("Number of shares must be a positive integer")
     except ValueError:
         return apology("Number of shares must be a valid integer")
-
 
     user = User.query.filter_by(id=session["user_id"]).first()
     if not user:
@@ -193,15 +179,12 @@ def buy():
         app.logger.error(f"Error during purchase: {e}")
         return apology("An error occurred while processing your purchase. Please try again.")
 
-
-
 @app.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
     transactions = Buy.query.filter_by(user_id=session["user_id"]).order_by(Buy.timestamp.desc()).all()
     return render_template("history.html", transactions=transactions)
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -238,7 +221,6 @@ def login():
     else:
         return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     """Log user out"""
@@ -248,7 +230,6 @@ def logout():
 
     # Redirect user to login form
     return redirect("/")
-
 
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
@@ -268,9 +249,6 @@ def quote():
 
     return render_template("quoted.html", quote=quote_data)
 
-
-
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
@@ -279,7 +257,6 @@ def register():
         username = request.form.get("username")
         password = request.form.get("password")
         confirmation = request.form.get("confirmation")
-
 
         if not username:
             return apology("must provide username", 400)
@@ -302,7 +279,6 @@ def register():
             db.session.add(new_user)
             db.session.commit()
 
-
             session["user_id"] = new_user.id
 
             flash("Registration successful! Welcome!", "success")
@@ -315,8 +291,6 @@ def register():
             return redirect("/register")
     else:
         return render_template("register.html")
-
-
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
@@ -369,7 +343,6 @@ def sell():
         return apology("not enough shares", 400)
 
     try:
-
         purchase = Buy(
             user_id=user.id,
             symbol=stock.upper(),
@@ -387,7 +360,6 @@ def sell():
         db.session.rollback()
         app.logger.error(f"Error during sale: {e}")
         return apology("An error occurred while processing your sale. Please try again.")
-
 
 @app.route("/password", methods=["GET", "POST"])
 @login_required
@@ -461,10 +433,6 @@ def add_cash():
         app.logger.error(f"Error adding cash: {e}")
         flash("An error occurred while adding cash", "error")
         return redirect("/")
-
-
-
-
 
 if __name__ == '__main__':
     # Only run migrations in production
