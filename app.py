@@ -28,10 +28,6 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-produ
 database_url = os.environ.get("DATABASE_URL")
 
 if database_url:
-    # Render provides postgres:// but SQLAlchemy 2.0+ requires postgresql://
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     print(f"Using PostgreSQL (Render)")
     print(f"Database URL configured: {database_url[:20]}...")  # Print first 20 chars for debugging
 else:
