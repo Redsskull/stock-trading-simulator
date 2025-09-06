@@ -66,6 +66,7 @@ def create_tables():
             # Don't exit the app, let it try to run anyway
             # Some migrations might fail but the app could still work
 
+
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
@@ -430,9 +431,10 @@ def add_cash():
         return redirect("/")
 
 if __name__ == '__main__':
-    # Only run migrations in production
-    if os.environ.get("DATABASE_URL"):
-        create_tables()
-
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+else:
+    # This else runs when Gunicorn imports the app module
+    # Run migrations here so tables get created on deployment
+    if os.environ.get("DATABASE_URL"):
+        create_tables()
