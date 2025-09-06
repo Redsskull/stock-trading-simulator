@@ -31,7 +31,7 @@ if database_url:
     if not database_url.startswith("postgresql+psycopg://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print(f"Database URL configured: {database_url[:40]}...")
+    app.logger.info(f"Database URL configured: {database_url[:40]}...")
 else:
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'finance.db')}"
@@ -57,13 +57,15 @@ def create_tables():
     with app.app_context():
         try:
             upgrade()  # This applies all pending migrations
-            print("Database upgraded successfully!")
+            app.logger.info("Database upgraded successfully!")
 
 
         except Exception as e:
-            print(f"Error creating tables: {e}")
+            app.logger.error(f"Error creating tables: {e}")
             # Don't exit the app, let it try to run anyway
             # Some migrations might fail but the app could still work
+            # app.logger.error("Failed to create tables. Exiting...")
+            # sys.exit(1)
 
 
 @app.after_request
@@ -281,7 +283,6 @@ def register():
 
         except Exception as e:
             app.logger.error(f"Registration error: {e}")
-
             db.session.rollback()
             flash("Registration failed. Please try again.", "error")
             return redirect("/register")
@@ -383,7 +384,7 @@ def password():
             return redirect("/")
 
         except Exception as e:
-            print(f"Error: {e}")
+            app.logger.error(f"Error: {e}")
             db.session.rollback()
             flash("Password change failed. Please try again.", "error")
             return redirect("/password")
