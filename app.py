@@ -35,7 +35,8 @@ if database_url:
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     print(f"Database URL configured: {database_url[:40]}...")
 else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'finance.db')}"
 
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
