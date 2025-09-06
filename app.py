@@ -27,8 +27,6 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-produ
 # Configure database with better error handling
 database_url = os.environ.get("DATABASE_URL")
 
-
-database_url = os.environ.get("DATABASE_URL")
 if database_url:
     if not database_url.startswith("postgresql+psycopg://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
