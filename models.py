@@ -5,10 +5,10 @@ from sqlalchemy import text
 class User(db.Model):
     __tablename__ = 'users'
     """Keeps track of the user data and their cash"""
-
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), index=True, unique=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     hash = db.Column(db.String(512), nullable=False)
+    # Use both server_default (for database) and default (for SQLAlchemy) for maximum reliability
     cash = db.Column(db.Float, nullable=False, server_default=text("10000.00"), default=10000.00)
 
     def __repr__(self):
@@ -17,7 +17,6 @@ class User(db.Model):
 class Buy(db.Model):
     __tablename__ = 'transactions'
     """Originally, was supposed to only track buys, but I suppose a better name now would have been Transaction"""
-
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     symbol = db.Column(db.String(5), nullable=False)
