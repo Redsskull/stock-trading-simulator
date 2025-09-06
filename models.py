@@ -9,7 +9,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     hash = db.Column(db.String(512), nullable=False)
-    cash = db.Column(db.Float, nullable=False, server_default=text("10000.00"))
+    cash = db.Column(db.Float, nullable=False, server_default=text("10000.00"), default=10000.00)
 
     def __repr__(self):
         return '<User {}>'.format(self.username)

@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, upgrade
 from datetime import datetime
 from requests.exceptions import RequestsDependencyWarning
+from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 # Load environment variables from .env file
@@ -38,6 +39,10 @@ else:
 
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
 
 # Initialize database and migrations
 db.init_app(app)
@@ -53,19 +58,25 @@ Session(app)
 
 # Function to create tables in production
 def create_tables():
-    """Create database tables using migrations"""
+    """Create database tables using migrations or direct creation"""
     with app.app_context():
         try:
-            upgrade()  # This applies all pending migrations
-            app.logger.info("Database upgraded successfully!")
-
-
+            # First, try migrations
+            upgrade()
+            app.logger.info("✅ Database migrations applied successfully!")
         except Exception as e:
-            app.logger.error(f"Error creating tables: {e}")
-            # Don't exit the app, let it try to run anyway
-            # Some migrations might fail but the app could still work
-            # app.logger.error("Failed to create tables. Exiting...")
-            # sys.exit(1)
+            print(f"⚠️  Migration failed: {e}")
+            print("🔄 Trying direct table creation...")
+            try:
+                # Fallback: create tables directly
+                db.create_all()
+                app.logger.info("✅ Database tables created directly!")
+            except Exception as e2:
+                print(f"❌ Table creation failed: {e2}")
+                # In production, might want to exit here
+                if os.environ.get("DATABASE_URL"):
+                    app.logger.error("❌ Database setup failed in production. This will cause issues.")
+                    # Don't exit - let's see what happens
 
 
 @app.after_request
@@ -272,6 +283,7 @@ def register():
             new_user = User(
                 username=username,
                 hash=generate_password_hash(password)
+
             )
             db.session.add(new_user)
             db.session.commit()
@@ -288,6 +300,7 @@ def register():
             return redirect("/register")
     else:
         return render_template("register.html")
+
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
@@ -357,6 +370,7 @@ def sell():
         db.session.rollback()
         app.logger.error(f"Error during sale: {e}")
         return apology("An error occurred while processing your sale. Please try again.")
+
 
 @app.route("/password", methods=["GET", "POST"])
 @login_required
@@ -431,11 +445,23 @@ def add_cash():
         flash("An error occurred while adding cash", "error")
         return redirect("/")
 
+@app.route("/health")
+def health():
+    """Health check for deployment platforms"""
+    try:
+        # Test database connection
+        db.session.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}, 200
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}, 500
+
+
 if __name__ == '__main__':
+    create_tables()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
 else:
-    # This else runs when Gunicorn imports the app module
-    # Run migrations here so tables get created on deployment
+    # This runs when Gunicorn imports the app
     if os.environ.get("DATABASE_URL"):
+        app.logger.info("🚀 Production mode detected, setting up database...")
         create_tables()
