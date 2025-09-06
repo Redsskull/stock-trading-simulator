@@ -29,9 +29,9 @@ database_url = os.environ.get("DATABASE_URL")
 
 
 if database_url:
-    # Convert postgres:// to postgresql:// if necessary
+    # Convert postgres:// to postgresql:// I think it's importan to psycopg3
     if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url.replace("postgresql://", "postgresql+psycopg://")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     print(f"Database URL configured: {database_url[:20]}...")  # Debugging line
 else:
