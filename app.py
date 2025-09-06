@@ -27,15 +27,16 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-in-produ
 # Configure database with better error handling
 database_url = os.environ.get("DATABASE_URL")
 
+
 if database_url:
-    print(f"Using PostgreSQL (Render)")
-    print(f"Database URL configured: {database_url[:20]}...")  # Print first 20 chars for debugging
+    # Convert postgres:// to postgresql:// if necessary
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    print(f"Database URL configured: {database_url[:20]}...")  # Debugging line
 else:
-    # Local development fallback
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
     print("WARNING: DATABASE_URL not found. Using SQLite (local development)")
-
-    # If on Render but no DATABASE_URL, that's a problem
     if os.environ.get("RENDER"):
         print("ERROR: Running on Render but DATABASE_URL is not set!")
 
