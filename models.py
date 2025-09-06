@@ -1,5 +1,6 @@
 from database import db
 from datetime import datetime, timezone
+from sqlalchemy import text
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -8,7 +9,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     hash = db.Column(db.String(128))
-    cash = db.Column(db.Float, nullable=False, default=10000.00)
+    cash = db.Column(db.Float, nullable=False, server_default=text("10000.00"))
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
