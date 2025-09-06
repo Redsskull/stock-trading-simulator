@@ -280,7 +280,8 @@ def register():
             return redirect("/")
 
         except Exception as e:
-            print(f"Error: {e}")
+            app.logger.error(f"Registration error: {e}")
+
             db.session.rollback()
             flash("Registration failed. Please try again.", "error")
             return redirect("/register")
