@@ -17,6 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, FLASH_AUTOHIDE_DELAY);
   }
 
+  const redirectUrl = document.body.getAttribute("data-redirect-url");
+  const delay = parseInt(document.body.getAttribute("data-redirect-delay"));
+
+  if (redirectUrl && delay) {
+    startApologyRedirect(redirectUrl, delay);
+  }
+
   // Add password validation for forms that need it
   setupPasswordValidation(
     "registerForm",
@@ -120,4 +127,26 @@ function showAlert(message, type = "danger") {
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   `;
   alertContainer.appendChild(alertElement);
+}
+
+// Apology redirect functionality
+function startApologyRedirect(redirectUrl, delay) {
+  // Only run if we have both parameters
+  if (!redirectUrl || !delay) return;
+
+  let timeLeft = delay;
+  const countdownElement = document.getElementById("countdown");
+
+  // Update countdown display
+  const timer = setInterval(() => {
+    timeLeft--;
+    if (countdownElement) {
+      countdownElement.textContent = timeLeft;
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      window.location.href = redirectUrl;
+    }
+  }, 1000);
 }

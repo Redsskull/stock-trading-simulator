@@ -1,11 +1,28 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} {% block title %} Apology {% endblock %} {% block
+main %}
+<!-- https://memegen.link/ -->
+<!-- https://knowyourmeme.com/memes/grumpy-cat -->
+<img
+    alt="{{ top }}"
+    class="border img-fluid"
+    src="https://api.memegen.link/images/custom/{{ top | urlencode }}/{{ bottom | urlencode }}.jpg?background=https://i.imgur.com/CsCgN7Ll.png&width=400"
+    title="{{ top }}"
+/>
 
-{% block title %}
-    Apology
-{% endblock %}
+<!-- Add redirect message if specified -->
+{% if redirect_to and delay %}
+<div class="mt-3 text-center">
+    <p class="text-muted">
+        Redirecting to login in
+        <span id="countdown">{{ delay }}</span> seconds...
+    </p>
+</div>
 
-{% block main %}
-    <!-- https://memegen.link/ -->
-    <!-- https://knowyourmeme.com/memes/grumpy-cat -->
-    <img alt="{{ top }}" class="border img-fluid" src="https://api.memegen.link/images/custom/{{ top | urlencode }}/{{ bottom | urlencode }}.jpg?background=https://i.imgur.com/CsCgN7Ll.png&width=400" title="{{ top }}">
-{% endblock %}
+<!-- Move JavaScript here so it actually runs -->
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+    // Pass data to external script
+    document.body.setAttribute("data-redirect-url", "{{ redirect_to }}");
+    document.body.setAttribute("data-redirect-delay", "{{ delay }}");
+</script>
+{% endif %} {% endblock %}

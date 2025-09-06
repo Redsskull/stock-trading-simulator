@@ -6,13 +6,11 @@ from functools import wraps
 
 
 #This function is credited to my teacher. who themselves used this code found here - https://github.com/jacebrowning/memegen
-def apology(message, code=400):
-    """Render message as an apology to user."""
-
+def apology(message, code=400, redirect_to=None, delay=None):
+    """Render message as an apology to user with optional timed redirect."""
     def escape(s):
         """
         Escape special characters.
-
         https://github.com/jacebrowning/memegen#special-characters
         """
         for old, new in [
@@ -27,8 +25,11 @@ def apology(message, code=400):
         ]:
             s = s.replace(old, new)
         return s
-
-    return render_template("apology.html", top=code, bottom=escape(message)), code
+    return render_template("apology.html",
+                         top=code,
+                         bottom=escape(message),
+                         redirect_to=redirect_to,
+                         delay=delay), code
 
 #This function is credited to my teacher.
 def login_required(f):
@@ -65,6 +66,17 @@ def lookup(symbol):
         profile_response = requests.get(profile_url)
         profile_response.raise_for_status()
         profile_data = profile_response.json()
+
+        current_price = quote_data.get("c")
+
+        # Check if we got valid data
+        if current_price is None or current_price == 0:
+            return {"error": "Invalid symbol or no data available"}
+
+        # Also check if we got a valid company name (additional validation)
+        company_name = profile_data.get("name")
+        if not company_name:
+            return {"error": "Invalid symbol or no data available"}
 
         return {
             "name": profile_data.get("name", symbol.upper()),
